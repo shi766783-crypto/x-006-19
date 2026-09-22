@@ -4,6 +4,7 @@ import { useFamilyStore } from '../../stores/useFamilyStore'
 import type { MedicalRecord } from '../../types'
 import { todayStr } from '../../utils/date'
 import { fileToBase64 } from '../../utils/image'
+import AutocompleteInput from '../ui/AutocompleteInput.vue'
 
 const emit = defineEmits<{
   (e: 'save', data: Omit<MedicalRecord, 'id'>): void
@@ -69,11 +70,19 @@ function submit() {
     </div>
     <div class="form-group">
       <label class="form-label">医院</label>
-      <input v-model="form.hospital" class="input" placeholder="医院名称" />
+      <AutocompleteInput
+        v-model="form.hospital"
+        :suggestions="store.state.dict.hospitals"
+        placeholder="医院名称"
+      />
     </div>
     <div class="form-group">
       <label class="form-label">科室</label>
-      <input v-model="form.department" class="input" placeholder="如：心内科" />
+      <AutocompleteInput
+        v-model="form.department"
+        :suggestions="store.state.dict.departments"
+        placeholder="如：心内科"
+      />
     </div>
     <div class="form-group">
       <label class="form-label">医生</label>

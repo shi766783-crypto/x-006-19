@@ -97,6 +97,12 @@ export interface MedicalRecord {
   attachments: string[]
 }
 
+/** User-maintained dictionary of frequently used hospital / department names. */
+export interface HospitalDepartmentDict {
+  hospitals: string[]
+  departments: string[]
+}
+
 /** A single dose due today, resolved from a plan + member + medicine. */
 export interface TodayDose {
   planId: string

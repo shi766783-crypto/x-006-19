@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import DictManager from '../components/record/DictManager.vue'
 import RecordForm from '../components/record/RecordForm.vue'
 import BaseModal from '../components/ui/BaseModal.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
@@ -10,6 +11,7 @@ import { formatCurrency } from '../utils/format'
 
 const store = useFamilyStore()
 const showForm = ref(false)
+const showDict = ref(false)
 const filterMember = ref('all')
 const dateFrom = ref('')
 const dateTo = ref('')
@@ -42,7 +44,10 @@ function onDelete(record: MedicalRecord) {
   <div class="page">
     <div class="page-head">
       <h1 class="page-title">就医记录</h1>
-      <button type="button" class="btn btn-primary" @click="showForm = true">＋ 添加就医事件</button>
+      <div class="head-actions">
+        <button type="button" class="btn btn-ghost" @click="showDict = true">常用医院科室</button>
+        <button type="button" class="btn btn-primary" @click="showForm = true">＋ 添加就医事件</button>
+      </div>
     </div>
 
     <!-- Filters -->
@@ -93,6 +98,10 @@ function onDelete(record: MedicalRecord) {
   <BaseModal v-if="showForm" title="添加就医事件" @close="showForm = false">
     <RecordForm @save="onSave" @close="showForm = false" />
   </BaseModal>
+
+  <BaseModal v-if="showDict" title="常用医院科室" @close="showDict = false">
+    <DictManager />
+  </BaseModal>
 </template>
 
 <style scoped>
@@ -101,6 +110,12 @@ function onDelete(record: MedicalRecord) {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.head-actions {
+  display: flex;
+  gap: 10px;
 }
 .page-title {
   margin: 0;

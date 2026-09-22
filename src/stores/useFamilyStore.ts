@@ -6,6 +6,7 @@ import type {
   DoseStatus,
   FamilyMember,
   HealthMetric,
+  HospitalDepartmentDict,
   MedicalRecord,
   Medicine,
   MedicationLog,
@@ -23,6 +24,7 @@ interface FamilyState {
   plans: MedicationPlan[]
   logs: MedicationLog[]
   records: MedicalRecord[]
+  dict: HospitalDepartmentDict
   unlockedAchievements: Record<string, number>
 }
 
@@ -33,6 +35,7 @@ function loadState(): FamilyState {
     plans: StorageService.loadPlans(),
     logs: StorageService.loadLogs(),
     records: StorageService.loadRecords(),
+    dict: StorageService.loadDict(),
     unlockedAchievements: StorageService.loadAchievements(),
   }
 }
@@ -63,6 +66,7 @@ function createStore() {
     StorageService.savePlans(state.plans)
     StorageService.saveLogs(state.logs)
     StorageService.saveRecords(state.records)
+    StorageService.saveDict(state.dict)
     StorageService.saveAchievements(state.unlockedAchievements)
   }
 
@@ -177,6 +181,20 @@ function createStore() {
     commit()
   }
 
+  // ---- hospital / department dictionary ----
+  function addDictEntry(kind: keyof HospitalDepartmentDict, name: string) {
+    const value = name.trim()
+    if (!value || state.dict[kind].includes(value)) return
+    state.dict[kind].push(value)
+    state.dict[kind].sort((a, b) => a.localeCompare(b, 'zh'))
+    commit()
+  }
+
+  function removeDictEntry(kind: keyof HospitalDepartmentDict, name: string) {
+    state.dict[kind] = state.dict[kind].filter((n) => n !== name)
+    commit()
+  }
+
   // ---- derived state ----
   const expiredMedicines = computed(() =>
     state.medicines.filter((m) => daysUntil(m.expiryDate) < 0),
@@ -278,6 +296,8 @@ function createStore() {
     logDose,
     addRecord,
     deleteRecord,
+    addDictEntry,
+    removeDictEntry,
     // derived
     expiredMedicines,
     expiringMedicines,

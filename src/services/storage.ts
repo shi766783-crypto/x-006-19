@@ -1,5 +1,6 @@
 import type {
   FamilyMember,
+  HospitalDepartmentDict,
   Medicine,
   MedicationLog,
   MedicationPlan,
@@ -17,6 +18,7 @@ const KEYS = {
   logs: 'fh_logs',
   records: 'fh_records',
   achievements: 'fh_achievements',
+  dict: 'fh_hospital_dict',
 } as const
 
 function read<T>(key: string, fallback: T): T {
@@ -50,4 +52,13 @@ export const StorageService = {
 
   loadAchievements: (): Record<string, number> => read(KEYS.achievements, {}),
   saveAchievements: (v: Record<string, number>) => write(KEYS.achievements, v),
+
+  loadDict: (): HospitalDepartmentDict => {
+    const d = read<HospitalDepartmentDict>(KEYS.dict, { hospitals: [], departments: [] })
+    return {
+      hospitals: Array.isArray(d.hospitals) ? d.hospitals : [],
+      departments: Array.isArray(d.departments) ? d.departments : [],
+    }
+  },
+  saveDict: (v: HospitalDepartmentDict) => write(KEYS.dict, v),
 }
