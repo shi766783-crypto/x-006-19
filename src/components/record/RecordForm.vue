@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { computed, reactive } from 'vue'
 import { useFamilyStore } from '../../stores/useFamilyStore'
 import type { MedicalRecord } from '../../types'
 import { todayStr } from '../../utils/date'
 import { fileToBase64 } from '../../utils/image'
+import AutocompleteInput from '../ui/AutocompleteInput.vue'
 
 const emit = defineEmits<{
   (e: 'save', data: Omit<MedicalRecord, 'id'>): void
@@ -23,6 +24,26 @@ const form = reactive({
   cost: 0,
   remark: '',
   attachments: [] as string[],
+})
+
+const hospitalOptions = computed(() => store.state.hospitals.map((h) => h.name))
+
+// Departments of the matched hospital; when the hospital is new/unknown,
+// fall back to every department in the dictionary as suggestions.
+const departmentOptions = computed(() => {
+  const entry = store.state.hospitals.find((h) => h.name === form.hospital.trim())
+  if (entry) return entry.departments
+  return [...new Set(store.state.hospitals.flatMap((h) => h.departments))]
+})
+
+const isNewHospital = computed(() => {
+  const v = form.hospital.trim()
+  return v !== '' && !store.state.hospitals.some((h) => h.name === v)
+})
+
+const isNewDepartment = computed(() => {
+  const v = form.department.trim()
+  return !isNewHospital.value && v !== '' && !departmentOptions.value.includes(v)
 })
 
 async function onFiles(event: Event) {
@@ -69,11 +90,21 @@ function submit() {
     </div>
     <div class="form-group">
       <label class="form-label">医院</label>
-      <input v-model="form.hospital" class="input" placeholder="医院名称" />
+      <AutocompleteInput
+        v-model="form.hospital"
+        :options="hospitalOptions"
+        placeholder="医院名称"
+      />
+      <p v-if="isNewHospital" class="field-hint">未收录的医院，保存后将自动加入常用字典</p>
     </div>
     <div class="form-group">
       <label class="form-label">科室</label>
-      <input v-model="form.department" class="input" placeholder="如：心内科" />
+      <AutocompleteInput
+        v-model="form.department"
+        :options="departmentOptions"
+        placeholder="如：心内科"
+      />
+      <p v-if="isNewDepartment" class="field-hint">未收录的科室，保存后将自动加入常用字典</p>
     </div>
     <div class="form-group">
       <label class="form-label">医生</label>
@@ -116,6 +147,11 @@ function submit() {
 </template>
 
 <style scoped>
+.field-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
 .form-actions {
   display: flex;
   justify-content: flex-end;

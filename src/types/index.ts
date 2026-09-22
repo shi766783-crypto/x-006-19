@@ -83,6 +83,13 @@ export interface MedicationLog {
   timestamp: number
 }
 
+/** A frequently-used hospital and its common departments, for autocomplete. */
+export interface HospitalEntry {
+  id: string
+  name: string
+  departments: string[]
+}
+
 export interface MedicalRecord {
   id: string
   memberId: string

@@ -6,6 +6,7 @@ import type {
   DoseStatus,
   FamilyMember,
   HealthMetric,
+  HospitalEntry,
   MedicalRecord,
   Medicine,
   MedicationLog,
@@ -23,6 +24,7 @@ interface FamilyState {
   plans: MedicationPlan[]
   logs: MedicationLog[]
   records: MedicalRecord[]
+  hospitals: HospitalEntry[]
   unlockedAchievements: Record<string, number>
 }
 
@@ -33,6 +35,7 @@ function loadState(): FamilyState {
     plans: StorageService.loadPlans(),
     logs: StorageService.loadLogs(),
     records: StorageService.loadRecords(),
+    hospitals: StorageService.loadHospitals(),
     unlockedAchievements: StorageService.loadAchievements(),
   }
 }
@@ -63,6 +66,7 @@ function createStore() {
     StorageService.savePlans(state.plans)
     StorageService.saveLogs(state.logs)
     StorageService.saveRecords(state.records)
+    StorageService.saveHospitals(state.hospitals)
     StorageService.saveAchievements(state.unlockedAchievements)
   }
 
@@ -169,11 +173,73 @@ function createStore() {
   // ---- medical records ----
   function addRecord(record: Omit<MedicalRecord, 'id'>) {
     state.records.push({ ...record, id: uid() })
+    learnHospitalNames(record.hospital, record.department)
     commit()
   }
 
   function deleteRecord(id: string) {
     state.records = state.records.filter((r) => r.id !== id)
+    commit()
+  }
+
+  // ---- hospital dictionary ----
+  function findHospitalByName(name: string): HospitalEntry | undefined {
+    const key = name.trim()
+    return state.hospitals.find((h) => h.name === key)
+  }
+
+  /** Get the entry for `name`, creating it (without committing) if missing. */
+  function ensureHospital(name: string): HospitalEntry {
+    const existing = findHospitalByName(name)
+    if (existing) return existing
+    const entry: HospitalEntry = { id: uid(), name: name.trim(), departments: [] }
+    state.hospitals.push(entry)
+    return entry
+  }
+
+  /** Remember names from a saved record so they autocomplete next time. */
+  function learnHospitalNames(hospital: string, department: string) {
+    if (!hospital.trim()) return
+    const entry = ensureHospital(hospital)
+    const dept = department.trim()
+    if (dept && !entry.departments.includes(dept)) entry.departments.push(dept)
+  }
+
+  function addHospital(name: string) {
+    if (!name.trim()) return
+    ensureHospital(name)
+    commit()
+  }
+
+  function updateHospital(id: string, patch: Partial<Omit<HospitalEntry, 'id'>>) {
+    const hospital = state.hospitals.find((h) => h.id === id)
+    if (!hospital) return
+    if (patch.name !== undefined) {
+      const name = patch.name.trim()
+      if (!name || state.hospitals.some((h) => h.id !== id && h.name === name)) return
+      patch = { ...patch, name }
+    }
+    Object.assign(hospital, patch)
+    commit()
+  }
+
+  function deleteHospital(id: string) {
+    state.hospitals = state.hospitals.filter((h) => h.id !== id)
+    commit()
+  }
+
+  function addDepartment(hospitalId: string, department: string) {
+    const hospital = state.hospitals.find((h) => h.id === hospitalId)
+    const dept = department.trim()
+    if (!hospital || !dept || hospital.departments.includes(dept)) return
+    hospital.departments.push(dept)
+    commit()
+  }
+
+  function removeDepartment(hospitalId: string, department: string) {
+    const hospital = state.hospitals.find((h) => h.id === hospitalId)
+    if (!hospital) return
+    hospital.departments = hospital.departments.filter((d) => d !== department)
     commit()
   }
 
@@ -278,6 +344,11 @@ function createStore() {
     logDose,
     addRecord,
     deleteRecord,
+    addHospital,
+    updateHospital,
+    deleteHospital,
+    addDepartment,
+    removeDepartment,
     // derived
     expiredMedicines,
     expiringMedicines,
